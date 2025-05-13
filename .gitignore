@@ -11,3 +11,13 @@ __pycache__/
 # OS-specific files
 .DS_Store
 Thumbs.db
+
+# Geany files
+cv_proj.geany
+
+# Ignore files in the uploads directory, but keep the directory itself if you want
+# To ignore all files within 'uploads' but not 'uploads' itself:
+uploads/*
+!uploads/.gitkeep 
+# (Then `touch uploads/.gitkeep` to ensure the empty dir can be tracked if desired, 
+# or just let git ignore 'uploads' completely if you don't need the empty dir in repo)

@@ -10,7 +10,7 @@ import threading # To run mDNS discovery in a background thread
 
 # --- mDNS Configuration ---
 # This MUST match the hostname set in the ESP32's mDNS configuration (e.g., "esp32-cam-project")
-ESP32_MDNS_HOSTNAME_BASE = "esp32-cam-project"
+ESP32_MDNS_HOSTNAME_BASE = "my-esp32-cam"
 # Standard HTTP service type the ESP32 advertises
 ESP32_SERVICE_TYPE = "_http._tcp.local."
 

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32-CAM Remote Trigger (OV2640)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>ESP32 Camera Control (OV2640 JPEG)</h1>
+        <button id="captureBtn">Trigger ESP32 Capture</button>
+        <div id="status">Initializing... Attempting to discover ESP32 (target: {{ target_mdns_hostname }}.local).</div>
+        <img id="preview" src="" alt="Image Preview" />
+    </div>
+
+    <script>
+        const captureBtn = document.getElementById('captureBtn');
+        const statusDiv = document.getElementById('status');
+        const previewImg = document.getElementById('preview');
+        // The targetHostnameJS is now directly available if passed to the template
+        // If not, the /esp32-status endpoint can provide it if needed, or hardcode if static.
+        // For dynamic display in status, we'll rely on the status check.
+        
+        async function checkEsp32Status() {
+            try {
+                const response = await fetch('/esp32-status'); // This endpoint is in your routes.py
+                const data = await response.json();
+                if (data.status === 'discovered') {
+                    statusDiv.textContent = `ESP32 Ready at ${data.url}. Click button to capture.`;
+                    statusDiv.className = 'success';
+                } else {
+                    // Use the hostname passed to the template if available, otherwise a generic message
+                    const targetHostname = "{{ target_mdns_hostname_for_js | default('your_esp32_hostname') }}";
+                    statusDiv.textContent = `Waiting for ESP32 discovery (target: ${targetHostname}.local)...`;
+                    statusDiv.className = ''; 
+                }
+            } catch (e) {
+                console.error("Error checking ESP32 status:", e);
+                statusDiv.textContent = 'Error checking ESP32 status. Server might be down.';
+                statusDiv.className = 'error';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            checkEsp32Status(); 
+            // Optionally, poll status periodically if discovery takes time or ESP32 can disconnect
+            // setInterval(checkEsp32Status, 7000); // e.g., every 7 seconds
+        });
+        
+        captureBtn.addEventListener('click', async () => {
+            statusDiv.textContent = 'Requesting image from ESP32...';
+            statusDiv.className = ''; 
+            previewImg.style.display = 'none'; 
+            previewImg.src = '';
+            captureBtn.disabled = true;
+
+            try {
+                const response = await fetch('/trigger-esp32-capture', { method: 'POST' });
+                const result = await response.json();
+
+                if (response.ok && result.status === 'success') {
+                    statusDiv.textContent = `Success! Image saved as: ${result.filename}`;
+                    statusDiv.className = 'success';
+                    // Use url_for for generating static asset URLs if you move uploads to static
+                    // For now, /uploads/ is a direct route.
+                    previewImg.src = `/uploads/${result.filename}?t=${Date.now()}`; // Timestamp to break cache
+                    previewImg.style.display = 'block';
+                } else {
+                    statusDiv.textContent = `Error: ${result.message || 'Failed to process image.'}`;
+                    statusDiv.className = 'error';
+                    // If ESP32 not found (503), prompt to check status again after a delay
+                    if (response.status === 503) { 
+                        statusDiv.textContent += ' Will retry discovery...';
+                        setTimeout(checkEsp32Status, 3000); // Check again after 3 seconds
+                    }
+                }
+            } catch (error) {
+                console.error('Fetch Error:', error);
+                statusDiv.textContent = `Client-side Error: ${error.message}`; // Display error message
+                statusDiv.className = 'error';
+            } finally {
+                captureBtn.disabled = false; // Re-enable button
+            }
+        });
+    </script>
+</body>
+</html>

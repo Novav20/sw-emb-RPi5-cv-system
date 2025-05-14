@@ -12,9 +12,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# Geany files
-cv_proj.geany
-
 # Ignore files in the uploads directory, but keep the directory itself if you want
 # To ignore all files within 'uploads' but not 'uploads' itself:
 uploads/*
